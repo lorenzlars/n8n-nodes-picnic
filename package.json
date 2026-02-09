@@ -1,0 +1,58 @@
+{
+  "name": "n8n-nodes-picnic",
+  "version": "0.1.0",
+  "description": "n8n community node that wraps the picnic-api npm package",
+  "keywords": [
+    "n8n-community-node-package",
+    "n8n",
+    "picnic",
+    "groceries"
+  ],
+  "license": "MIT",
+  "author": "",
+  "homepage": "https://github.com/REPLACE_ME/n8n-nodes-picnic",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/REPLACE_ME/n8n-nodes-picnic.git"
+  },
+  "bugs": {
+    "url": "https://github.com/REPLACE_ME/n8n-nodes-picnic/issues"
+  },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json && npm run copy-assets",
+    "clean": "rm -rf dist",
+    "copy-assets": "mkdir -p dist/nodes/Picnic && cp src/nodes/Picnic/picnic.svg dist/nodes/Picnic/picnic.svg",
+    "prepublishOnly": "npm run clean && npm run build"
+  },
+  "engines": {
+    "node": ">=18.17"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "n8n": {
+    "n8nNodesApiVersion": 1,
+    "credentials": [
+      "dist/credentials/PicnicApi.credentials.js"
+    ],
+    "nodes": [
+      "dist/nodes/Picnic/Picnic.node.js"
+    ]
+  },
+  "dependencies": {
+    "picnic-api": "^2.6.0"
+  },
+  "peerDependencies": {
+    "n8n-workflow": "*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.0",
+    "typescript": "^5.6.3"
+  }
+}
