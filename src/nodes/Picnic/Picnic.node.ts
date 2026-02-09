@@ -18,6 +18,7 @@ export class Picnic implements INodeType {
     version: 1,
     subtitle: '={{$parameter["operation"]}}',
     description: 'Wrapper around the picnic-api npm package',
+    usableAsTool: true,
     defaults: {
       name: 'Picnic',
     },

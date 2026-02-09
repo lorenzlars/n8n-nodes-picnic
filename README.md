@@ -31,6 +31,19 @@ npm install n8n-nodes-picnic
 
 Danach n8n neu starten.
 
+## Nutzung mit n8n AI Agents
+
+Der Node ist als Tool freigegeben (`usableAsTool`) und kann in AI-Agent-Workflows als Tool verwendet werden.
+
+Beispiel-Setup:
+
+1. AI Agent Node erstellen.
+2. `Picnic` Node hinzufügen und Credentials setzen.
+3. Im `Picnic` Node die gewünschte `Operation` wählen (z. B. `Search Products`).
+4. `Picnic` als Tool mit dem Agent verbinden.
+
+Der Agent kann dann den `Picnic`-Node als Tool aufrufen und das Ergebnis als JSON weiterverarbeiten.
+
 ## GitHub Setup
 
 1. Repository nach GitHub pushen.
