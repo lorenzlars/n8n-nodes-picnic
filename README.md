@@ -19,6 +19,7 @@ n8n Community Node, die das npm Paket [`picnic-api`](https://www.npmjs.com/packa
 
 ```bash
 npm install
+npm test
 npm run build
 ```
 
@@ -60,7 +61,7 @@ Empfohlener Ablauf:
 Credential-Typ `Picnic API` unterstützt:
 
 - `authKey` (optional, bevorzugt)
-- oder `userId` + `password`
+- oder `Email` + `password`
 - `countryCode` (`NL`, `DE`, `FR`)
 - `apiVersion` (Default `15`)
 

@@ -1,15 +1,13 @@
 declare module 'picnic-api' {
   interface PicnicOptions {
-    userId?: string;
-    password?: string;
     countryCode?: string;
-    apiVersion?: number;
+    apiVersion?: number | string;
     authKey?: string;
   }
 
   class PicnicAPI {
     constructor(options: PicnicOptions);
-    login(): Promise<unknown>;
+    login(userId: string, password: string): Promise<unknown>;
     search(query: string): Promise<unknown>;
     getCart(): Promise<unknown>;
     addProductToShoppingCart(productId: string, count: number): Promise<unknown>;

@@ -6,6 +6,7 @@ import type {
   INodeTypeDescription,
 } from 'n8n-workflow';
 import { NodeOperationError } from 'n8n-workflow';
+import { ensurePicnicAuthenticated } from './login';
 
 export class Picnic implements INodeType {
   description: INodeTypeDescription = {
@@ -93,31 +94,24 @@ export class Picnic implements INodeType {
         const operation = this.getNodeParameter('operation', itemIndex) as string;
 
         const credentials = await this.getCredentials('picnicApi', itemIndex);
-        const userId = credentials.userId as string;
-        const password = credentials.password as string;
+        const userId = ((credentials.userId as string) || '').trim();
+        const password = (credentials.password as string) || '';
         const countryCode = (credentials.countryCode as string) || 'NL';
-        const apiVersionRaw = credentials.apiVersion as string;
-        const apiVersion = Number.parseInt(apiVersionRaw || '15', 10);
-        const authKey = (credentials.authKey as string) || '';
+        const apiVersion = (credentials.apiVersion as string) || '15';
+        const authKey = ((credentials.authKey as string) || '').trim();
 
         const { default: PicnicAPI } = await import('picnic-api');
 
         const client = new PicnicAPI({
-          userId,
-          password,
           countryCode,
           apiVersion,
           authKey: authKey || undefined,
         }) as any;
 
-        if (!authKey && (!userId || !password)) {
-          throw new NodeOperationError(this.getNode(), 'Provide either authKey or userId + password.', {
-            itemIndex,
-          });
-        }
-
-        if (!authKey) {
-          await client.login();
+        try {
+          await ensurePicnicAuthenticated(client, authKey, userId, password);
+        } catch (error) {
+          throw new NodeOperationError(this.getNode(), (error as Error).message, { itemIndex });
         }
 
         let responseData: IDataObject | IDataObject[];

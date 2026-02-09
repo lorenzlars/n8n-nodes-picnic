@@ -37,11 +37,11 @@ export class PicnicApi implements ICredentialType {
       description: 'If set, this key is used directly and no login is done',
     },
     {
-      displayName: 'Email / User ID',
+      displayName: 'Email',
       name: 'userId',
       type: 'string',
       default: '',
-      description: 'Needed only if Auth Key is not set',
+      description: 'Picnic account email. Needed only if Auth Key is not set',
     },
     {
       displayName: 'Password',

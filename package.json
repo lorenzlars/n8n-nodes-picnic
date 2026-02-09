@@ -1,6 +1,6 @@
 {
   "name": "n8n-nodes-picnic",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "n8n community node that wraps the picnic-api npm package",
   "keywords": [
     "n8n-community-node-package",
@@ -27,6 +27,8 @@
     "build": "tsc -p tsconfig.json && npm run copy-assets",
     "clean": "rm -rf dist",
     "copy-assets": "mkdir -p dist/nodes/Picnic && cp src/nodes/Picnic/picnic.svg dist/nodes/Picnic/picnic.svg",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "prepublishOnly": "npm run clean && npm run build"
   },
   "engines": {
@@ -49,7 +51,8 @@
   },
   "devDependencies": {
     "@types/node": "^20.17.0",
-    "typescript": "^5.6.3"
+    "typescript": "^5.6.3",
+    "vitest": "^4.0.18"
   },
   "dependencies": {
     "picnic-api": "^3.2.0"
