@@ -10,13 +10,13 @@
   ],
   "license": "MIT",
   "author": "",
-  "homepage": "https://github.com/REPLACE_ME/n8n-nodes-picnic",
+  "homepage": "https://github.com/lorenzlars/n8n-nodes-picnic",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/REPLACE_ME/n8n-nodes-picnic.git"
+    "url": "git+https://github.com/lorenzlars/n8n-nodes-picnic.git"
   },
   "bugs": {
-    "url": "https://github.com/REPLACE_ME/n8n-nodes-picnic/issues"
+    "url": "https://github.com/lorenzlars/n8n-nodes-picnic/issues"
   },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -33,8 +33,7 @@
     "node": ">=18.17"
   },
   "publishConfig": {
-    "access": "public",
-    "provenance": true
+    "access": "public"
   },
   "n8n": {
     "n8nNodesApiVersion": 1,
@@ -45,14 +44,14 @@
       "dist/nodes/Picnic/Picnic.node.js"
     ]
   },
-  "dependencies": {
-    "picnic-api": "^2.6.0"
-  },
   "peerDependencies": {
     "n8n-workflow": "*"
   },
   "devDependencies": {
     "@types/node": "^20.17.0",
     "typescript": "^5.6.3"
+  },
+  "dependencies": {
+    "picnic-api": "^3.2.0"
   }
 }
