@@ -6,6 +6,7 @@ import type {
   INodeTypeDescription,
 } from 'n8n-workflow';
 import { NodeOperationError } from 'n8n-workflow';
+import { callClientMethod } from './client-methods';
 import { ensurePicnicAuthenticated } from './login';
 
 export class Picnic implements INodeType {
@@ -118,19 +119,40 @@ export class Picnic implements INodeType {
 
         if (operation === 'searchProducts') {
           const query = this.getNodeParameter('query', itemIndex) as string;
-          responseData = (await client.search(query)) as IDataObject;
+          responseData = (await callClientMethod<IDataObject>(
+            client,
+            'searchProducts',
+            ['search'],
+            query,
+          )) as IDataObject;
         } else if (operation === 'getCart') {
-          responseData = (await client.getCart()) as IDataObject;
+          responseData = (await callClientMethod<IDataObject>(client, 'getCart', [
+            'getShoppingCart',
+            'getCart',
+          ])) as IDataObject;
         } else if (operation === 'addToCart') {
           const productId = this.getNodeParameter('productId', itemIndex) as string;
           const count = this.getNodeParameter('count', itemIndex) as number;
-          responseData = (await client.addProductToShoppingCart(productId, count)) as IDataObject;
+          responseData = (await callClientMethod<IDataObject>(
+            client,
+            'addToCart',
+            ['addProductToShoppingCart'],
+            productId,
+            count,
+          )) as IDataObject;
         } else if (operation === 'clearCart') {
-          responseData = (await client.clearCart()) as IDataObject;
+          responseData = (await callClientMethod<IDataObject>(client, 'clearCart', [
+            'clearShoppingCart',
+            'clearCart',
+          ])) as IDataObject;
         } else if (operation === 'getDeliveries') {
-          responseData = (await client.getDeliveries()) as IDataObject;
+          responseData = (await callClientMethod<IDataObject>(client, 'getDeliveries', [
+            'getDeliveries',
+          ])) as IDataObject;
         } else if (operation === 'getUserDetails') {
-          responseData = (await client.getUserDetails()) as IDataObject;
+          responseData = (await callClientMethod<IDataObject>(client, 'getUserDetails', [
+            'getUserDetails',
+          ])) as IDataObject;
         } else {
           throw new NodeOperationError(this.getNode(), `Unsupported operation: ${operation}`, {
             itemIndex,

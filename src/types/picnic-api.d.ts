@@ -9,9 +9,11 @@ declare module 'picnic-api' {
     constructor(options: PicnicOptions);
     login(userId: string, password: string): Promise<unknown>;
     search(query: string): Promise<unknown>;
-    getCart(): Promise<unknown>;
-    addProductToShoppingCart(productId: string, count: number): Promise<unknown>;
-    clearCart(): Promise<unknown>;
+    getShoppingCart(): Promise<unknown>;
+    getCart?(): Promise<unknown>;
+    addProductToShoppingCart(productId: string, count?: number): Promise<unknown>;
+    clearShoppingCart(): Promise<unknown>;
+    clearCart?(): Promise<unknown>;
     getDeliveries(): Promise<unknown>;
     getUserDetails(): Promise<unknown>;
   }
