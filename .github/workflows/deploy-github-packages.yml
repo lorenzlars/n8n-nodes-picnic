@@ -1,20 +1,24 @@
 name: Deploy to GitHub Packages
 
 on:
-  release:
-    types: [published]
+  workflow_call:
+    inputs:
+      ref:
+        required: false
+        type: string
   workflow_dispatch:
-
-permissions:
-  contents: read
-  packages: write
 
 jobs:
   publish-github-packages:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4

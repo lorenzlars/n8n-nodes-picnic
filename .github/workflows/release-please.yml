@@ -13,9 +13,34 @@ permissions:
 jobs:
   release-please:
     runs-on: ubuntu-latest
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created || steps.release.outputs.releases_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
     steps:
       - name: Run release-please
+        id: release
         uses: googleapis/release-please-action@v4
         with:
           config-file: .release-please-config.json
           manifest-file: .release-please-manifest.json
+
+  deploy-npm:
+    if: needs.release-please.outputs.release_created == 'true'
+    needs: [release-please]
+    uses: ./.github/workflows/publish.yml
+    permissions:
+      contents: read
+      id-token: write # Required for OIDC
+    with:
+      ref: ${{ needs.release-please.outputs.tag_name }}
+
+  deploy-github-packages:
+    if: needs.release-please.outputs.release_created == 'true'
+    needs: [release-please]
+    uses: ./.github/workflows/deploy-github-packages.yml
+    permissions:
+      contents: read
+      packages: write
+    with:
+      ref: ${{ needs.release-please.outputs.tag_name }}
+    secrets: inherit
