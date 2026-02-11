@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/lorenzlars/n8n-nodes-picnic/compare/n8n-nodes-picnic-v0.2.0...n8n-nodes-picnic-v0.2.1) (2026-02-11)
+
+
+### Bug Fixes
+
+* github package workflow ([46273b4](https://github.com/lorenzlars/n8n-nodes-picnic/commit/46273b4f5ad61be74c3b96aa122bc8ad33bdde14))
+
 ## [0.2.0](https://github.com/lorenzlars/n8n-nodes-picnic/compare/n8n-nodes-picnic-v0.1.5...n8n-nodes-picnic-v0.2.0) (2026-02-11)
 
 
