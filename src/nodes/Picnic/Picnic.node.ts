@@ -6,8 +6,79 @@ import type {
   INodeTypeDescription,
 } from 'n8n-workflow';
 import { NodeOperationError } from 'n8n-workflow';
+import { buildAuthCacheKey, clearCachedAuthKey, getCachedAuthKey, setCachedAuthKey } from './auth-cache';
 import { callClientMethod } from './client-methods';
 import { ensurePicnicAuthenticated } from './login';
+
+type PicnicClient = {
+  authKey?: string | null;
+  login(userId: string, password: string): Promise<unknown>;
+};
+
+function getClientAuthKey(client: PicnicClient): string | undefined {
+  const authKey = client.authKey;
+  if (typeof authKey !== 'string') return undefined;
+  const trimmed = authKey.trim();
+  return trimmed ? trimmed : undefined;
+}
+
+function isLikelyAuthError(error: unknown): boolean {
+  const message = (error as Error).message?.toLowerCase?.() ?? '';
+  return (
+    message.includes('unauthorized') ||
+    message.includes('forbidden') ||
+    message.includes('401') ||
+    message.includes('403') ||
+    message.includes('auth')
+  );
+}
+
+async function executeOperation(
+  client: Record<string, unknown>,
+  operation: string,
+  getNodeParameter: (name: string) => string | number,
+): Promise<IDataObject> {
+  if (operation === 'searchProducts') {
+    const query = getNodeParameter('query') as string;
+    return (await callClientMethod<IDataObject>(client, 'searchProducts', ['search'], query)) as IDataObject;
+  }
+
+  if (operation === 'getCart') {
+    return (await callClientMethod<IDataObject>(client, 'getCart', [
+      'getShoppingCart',
+      'getCart',
+    ])) as IDataObject;
+  }
+
+  if (operation === 'addToCart') {
+    const productId = getNodeParameter('productId') as string;
+    const count = getNodeParameter('count') as number;
+    return (await callClientMethod<IDataObject>(
+      client,
+      'addToCart',
+      ['addProductToShoppingCart'],
+      productId,
+      count,
+    )) as IDataObject;
+  }
+
+  if (operation === 'clearCart') {
+    return (await callClientMethod<IDataObject>(client, 'clearCart', [
+      'clearShoppingCart',
+      'clearCart',
+    ])) as IDataObject;
+  }
+
+  if (operation === 'getDeliveries') {
+    return (await callClientMethod<IDataObject>(client, 'getDeliveries', ['getDeliveries'])) as IDataObject;
+  }
+
+  if (operation === 'getUserDetails') {
+    return (await callClientMethod<IDataObject>(client, 'getUserDetails', ['getUserDetails'])) as IDataObject;
+  }
+
+  throw new Error(`Unsupported operation: ${operation}`);
+}
 
 export class Picnic implements INodeType {
   description: INodeTypeDescription = {
@@ -100,64 +171,71 @@ export class Picnic implements INodeType {
         const password = (credentials.password as string) || '';
         const countryCode = (credentials.countryCode as string) || 'NL';
         const apiVersion = (credentials.apiVersion as string) || '15';
-        const authKey = ((credentials.authKey as string) || '').trim();
+        const configuredAuthKey = ((credentials.authKey as string) || '').trim();
+        const hasConfiguredAuthKey = configuredAuthKey.length > 0;
+        const cacheKey = hasConfiguredAuthKey
+          ? undefined
+          : buildAuthCacheKey(userId, countryCode, apiVersion);
+        const cachedAuthKey = cacheKey ? getCachedAuthKey(cacheKey) : undefined;
+        const initialAuthKey = configuredAuthKey || cachedAuthKey;
 
-        const { default: PicnicAPI } = await import('picnic-api');
+        const imported = await import('picnic-api');
+        const PicnicAPI = (imported.default ?? imported) as unknown as new (options: {
+          countryCode: string;
+          apiVersion: string;
+          authKey?: string;
+        }) => PicnicClient;
 
         const client = new PicnicAPI({
           countryCode,
           apiVersion,
-          authKey: authKey || undefined,
-        }) as any;
+          authKey: initialAuthKey || undefined,
+        });
 
         try {
-          await ensurePicnicAuthenticated(client, authKey, userId, password);
+          await ensurePicnicAuthenticated(client, initialAuthKey || '', userId, password);
+
+          if (!hasConfiguredAuthKey && cacheKey) {
+            const newAuthKey = getClientAuthKey(client);
+            if (newAuthKey) {
+              setCachedAuthKey(cacheKey, newAuthKey);
+            }
+          }
         } catch (error) {
           throw new NodeOperationError(this.getNode(), (error as Error).message, { itemIndex });
         }
 
-        let responseData: IDataObject | IDataObject[];
+        let responseData: IDataObject;
 
-        if (operation === 'searchProducts') {
-          const query = this.getNodeParameter('query', itemIndex) as string;
-          responseData = (await callClientMethod<IDataObject>(
-            client,
-            'searchProducts',
-            ['search'],
-            query,
-          )) as IDataObject;
-        } else if (operation === 'getCart') {
-          responseData = (await callClientMethod<IDataObject>(client, 'getCart', [
-            'getShoppingCart',
-            'getCart',
-          ])) as IDataObject;
-        } else if (operation === 'addToCart') {
-          const productId = this.getNodeParameter('productId', itemIndex) as string;
-          const count = this.getNodeParameter('count', itemIndex) as number;
-          responseData = (await callClientMethod<IDataObject>(
-            client,
-            'addToCart',
-            ['addProductToShoppingCart'],
-            productId,
-            count,
-          )) as IDataObject;
-        } else if (operation === 'clearCart') {
-          responseData = (await callClientMethod<IDataObject>(client, 'clearCart', [
-            'clearShoppingCart',
-            'clearCart',
-          ])) as IDataObject;
-        } else if (operation === 'getDeliveries') {
-          responseData = (await callClientMethod<IDataObject>(client, 'getDeliveries', [
-            'getDeliveries',
-          ])) as IDataObject;
-        } else if (operation === 'getUserDetails') {
-          responseData = (await callClientMethod<IDataObject>(client, 'getUserDetails', [
-            'getUserDetails',
-          ])) as IDataObject;
-        } else {
-          throw new NodeOperationError(this.getNode(), `Unsupported operation: ${operation}`, {
-            itemIndex,
-          });
+        try {
+          responseData = await executeOperation(client as unknown as Record<string, unknown>, operation, (name) =>
+            this.getNodeParameter(name, itemIndex) as string | number,
+          );
+        } catch (error) {
+          // Retry once if cached auth key has expired.
+          if (!hasConfiguredAuthKey && cacheKey && isLikelyAuthError(error) && userId && password) {
+            clearCachedAuthKey(cacheKey);
+
+            const retryClient = new PicnicAPI({
+              countryCode,
+              apiVersion,
+            });
+
+            await ensurePicnicAuthenticated(retryClient, '', userId, password);
+
+            const refreshedAuthKey = getClientAuthKey(retryClient);
+            if (refreshedAuthKey) {
+              setCachedAuthKey(cacheKey, refreshedAuthKey);
+            }
+
+            responseData = await executeOperation(
+              retryClient as unknown as Record<string, unknown>,
+              operation,
+              (name) => this.getNodeParameter(name, itemIndex) as string | number,
+            );
+          } else {
+            throw error;
+          }
         }
 
         returnData.push({

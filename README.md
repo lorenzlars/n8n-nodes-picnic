@@ -82,3 +82,5 @@ Credential-Typ `Picnic API` unterstützt:
 
 - Die konkrete Verfügbarkeit von Picnic-API-Funktionen kann sich ändern.
 - Falls Methoden im `picnic-api` Paket abweichen, passe `src/nodes/Picnic/Picnic.node.ts` entsprechend an.
+- Wenn `authKey` nicht manuell gesetzt ist, cached der Node den Login-Token im Prozessspeicher (Standard TTL: 6h), damit nicht jeder Aufruf `login()` ausführt.
+- Optional kann die TTL über `PICNIC_AUTH_CACHE_TTL_MS` gesetzt werden.
