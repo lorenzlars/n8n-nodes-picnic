@@ -40,6 +40,9 @@ async function executeOperation(
 ): Promise<IDataObject> {
   if (operation === 'searchProducts') {
     const query = getNodeParameter('query') as string;
+    if (!query || !(query as string).trim()) {
+      return [] as unknown as IDataObject;
+    }
     return (await callClientMethod<IDataObject>(client, 'searchProducts', ['search'], query)) as IDataObject;
   }
 
