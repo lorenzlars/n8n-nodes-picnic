@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.6](https://github.com/lorenzlars/n8n-nodes-picnic/compare/n8n-nodes-picnic-v0.2.5...n8n-nodes-picnic-v0.2.6) (2026-02-27)
+
+
+### Bug Fixes
+
+* empty search ([896081b](https://github.com/lorenzlars/n8n-nodes-picnic/commit/896081b277fe23da162aa70efc46003e9469b311))
+
 ## [0.2.5](https://github.com/lorenzlars/n8n-nodes-picnic/compare/n8n-nodes-picnic-v0.2.4...n8n-nodes-picnic-v0.2.5) (2026-02-27)
 
 
