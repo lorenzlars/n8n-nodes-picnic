@@ -173,11 +173,12 @@ export class Picnic implements INodeType {
         const apiVersion = (credentials.apiVersion as string) || '15';
         const configuredAuthKey = ((credentials.authKey as string) || '').trim();
         const hasConfiguredAuthKey = configuredAuthKey.length > 0;
-        const cacheKey = hasConfiguredAuthKey
-          ? undefined
-          : buildAuthCacheKey(userId, countryCode, apiVersion);
+        // Build a cache key whenever userId is available so that a fresh login token
+        // can be cached and reused even when a (possibly stale) configuredAuthKey is set.
+        const cacheKey = userId ? buildAuthCacheKey(userId, countryCode, apiVersion) : undefined;
         const cachedAuthKey = cacheKey ? getCachedAuthKey(cacheKey) : undefined;
-        const initialAuthKey = configuredAuthKey || cachedAuthKey;
+        // Prefer a freshly cached login token over a potentially stale configured auth key.
+        const initialAuthKey = cachedAuthKey || configuredAuthKey;
 
         const imported = await import('picnic-api');
         const PicnicAPI = (imported.default ?? imported) as unknown as new (options: {
@@ -212,9 +213,11 @@ export class Picnic implements INodeType {
             this.getNodeParameter(name, itemIndex) as string | number,
           );
         } catch (error) {
-          // Retry once if cached auth key has expired.
-          if (!hasConfiguredAuthKey && cacheKey && isLikelyAuthError(error) && userId && password) {
-            clearCachedAuthKey(cacheKey);
+          // Retry once on 401/403: clear the stale token, re-login and repeat the request.
+          // This handles both the cached-key case and a configuredAuthKey that has expired
+          // on the server side (when email + password are also provided as a fallback).
+          if (isLikelyAuthError(error) && userId && password) {
+            if (cacheKey) clearCachedAuthKey(cacheKey);
 
             const retryClient = new PicnicAPI({
               countryCode,
@@ -224,7 +227,7 @@ export class Picnic implements INodeType {
             await ensurePicnicAuthenticated(retryClient, '', userId, password);
 
             const refreshedAuthKey = getClientAuthKey(retryClient);
-            if (refreshedAuthKey) {
+            if (refreshedAuthKey && cacheKey) {
               setCachedAuthKey(cacheKey, refreshedAuthKey);
             }
 
