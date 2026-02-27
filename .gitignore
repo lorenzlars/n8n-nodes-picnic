@@ -3,5 +3,8 @@ dist
 npm-debug.log*
 .DS_Store
 
+.env
+.envrc
+
 # Claude Code
 .claude/*.local.*
