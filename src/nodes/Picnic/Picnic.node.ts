@@ -7,12 +7,19 @@ import type {
 } from 'n8n-workflow';
 import { NodeOperationError } from 'n8n-workflow';
 import { buildAuthCacheKey, clearCachedAuthKey, getCachedAuthKey, setCachedAuthKey } from './auth-cache';
-import { callClientMethod } from './client-methods';
 import { ensurePicnicAuthenticated } from './login';
 
 type PicnicClient = {
   authKey?: string | null;
-  login(userId: string, password: string): Promise<unknown>;
+  auth: { login(username: string, password: string): Promise<unknown> };
+  catalog: { search(query: string): Promise<unknown> };
+  cart: {
+    getCart(): Promise<unknown>;
+    addProductToCart(productId: string, count: number): Promise<unknown>;
+    clearCart(): Promise<unknown>;
+  };
+  delivery: { getDeliveries(): Promise<unknown> };
+  user: { getUserDetails(): Promise<unknown> };
 };
 
 function getClientAuthKey(client: PicnicClient): string | undefined {
@@ -34,50 +41,38 @@ function isLikelyAuthError(error: unknown): boolean {
 }
 
 async function executeOperation(
-  client: Record<string, unknown>,
+  client: PicnicClient,
   operation: string,
   getNodeParameter: (name: string) => string | number,
 ): Promise<IDataObject> {
   if (operation === 'searchProducts') {
     const query = getNodeParameter('query') as string;
-    if (!query || !(query as string).trim()) {
+    if (!query || !query.trim()) {
       return [] as unknown as IDataObject;
     }
-    return (await callClientMethod<IDataObject>(client, 'searchProducts', ['search'], query)) as IDataObject;
+    return (await client.catalog.search(query)) as IDataObject;
   }
 
   if (operation === 'getCart') {
-    return (await callClientMethod<IDataObject>(client, 'getCart', [
-      'getShoppingCart',
-      'getCart',
-    ])) as IDataObject;
+    return (await client.cart.getCart()) as IDataObject;
   }
 
   if (operation === 'addToCart') {
     const productId = getNodeParameter('productId') as string;
     const count = getNodeParameter('count') as number;
-    return (await callClientMethod<IDataObject>(
-      client,
-      'addToCart',
-      ['addProductToShoppingCart'],
-      productId,
-      count,
-    )) as IDataObject;
+    return (await client.cart.addProductToCart(productId, count)) as IDataObject;
   }
 
   if (operation === 'clearCart') {
-    return (await callClientMethod<IDataObject>(client, 'clearCart', [
-      'clearShoppingCart',
-      'clearCart',
-    ])) as IDataObject;
+    return (await client.cart.clearCart()) as IDataObject;
   }
 
   if (operation === 'getDeliveries') {
-    return (await callClientMethod<IDataObject>(client, 'getDeliveries', ['getDeliveries'])) as IDataObject;
+    return (await client.delivery.getDeliveries()) as IDataObject;
   }
 
   if (operation === 'getUserDetails') {
-    return (await callClientMethod<IDataObject>(client, 'getUserDetails', ['getUserDetails'])) as IDataObject;
+    return (await client.user.getUserDetails()) as IDataObject;
   }
 
   throw new Error(`Unsupported operation: ${operation}`);
@@ -212,7 +207,7 @@ export class Picnic implements INodeType {
         let responseData: IDataObject;
 
         try {
-          responseData = await executeOperation(client as unknown as Record<string, unknown>, operation, (name) =>
+          responseData = await executeOperation(client, operation, (name) =>
             this.getNodeParameter(name, itemIndex) as string | number,
           );
         } catch (error) {
@@ -235,7 +230,7 @@ export class Picnic implements INodeType {
             }
 
             responseData = await executeOperation(
-              retryClient as unknown as Record<string, unknown>,
+              retryClient,
               operation,
               (name) => this.getNodeParameter(name, itemIndex) as string | number,
             );

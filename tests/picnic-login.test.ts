@@ -4,7 +4,7 @@ import { ensurePicnicAuthenticated } from '../src/nodes/Picnic/login';
 describe('ensurePicnicAuthenticated', () => {
   it('calls login with email and password when authKey is empty', async () => {
     const login = vi.fn().mockResolvedValue(undefined);
-    const client = { login };
+    const client = { auth: { login } };
 
     await ensurePicnicAuthenticated(client, '', 'john@example.com', 'topsecret');
 
@@ -14,7 +14,7 @@ describe('ensurePicnicAuthenticated', () => {
 
   it('does not call login when authKey is present', async () => {
     const login = vi.fn().mockResolvedValue(undefined);
-    const client = { login };
+    const client = { auth: { login } };
 
     await ensurePicnicAuthenticated(client, 'auth-key-value', '', '');
 
@@ -23,7 +23,7 @@ describe('ensurePicnicAuthenticated', () => {
 
   it('throws when no authKey and missing credentials', async () => {
     const login = vi.fn().mockResolvedValue(undefined);
-    const client = { login };
+    const client = { auth: { login } };
 
     await expect(ensurePicnicAuthenticated(client, '', '', '')).rejects.toThrow(
       'Provide either authKey or email + password.',

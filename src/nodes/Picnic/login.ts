@@ -1,5 +1,5 @@
 export interface PicnicLoginClient {
-  login(userId: string, password: string): Promise<unknown>;
+  auth: { login(username: string, password: string): Promise<unknown> };
 }
 
 export async function ensurePicnicAuthenticated(
@@ -16,5 +16,5 @@ export async function ensurePicnicAuthenticated(
     throw new Error('Provide either authKey or email + password.');
   }
 
-  await client.login(userId, password);
+  await client.auth.login(userId, password);
 }
