@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0](https://github.com/lorenzlars/n8n-nodes-picnic/compare/n8n-nodes-picnic-v0.2.6...n8n-nodes-picnic-v0.3.0) (2026-03-04)
+
+
+### Features
+
+* api bump ([0d391b7](https://github.com/lorenzlars/n8n-nodes-picnic/commit/0d391b7df007f42d5c2b1059655b828e1b0668ca))
+
 ## [0.2.6](https://github.com/lorenzlars/n8n-nodes-picnic/compare/n8n-nodes-picnic-v0.2.5...n8n-nodes-picnic-v0.2.6) (2026-02-27)
 
 
