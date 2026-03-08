@@ -55,6 +55,6 @@
     "vitest": "^4.0.18"
   },
   "dependencies": {
-    "picnic-api": "^4.0.0"
+    "picnic-api": "^4.0.1"
   }
 }
