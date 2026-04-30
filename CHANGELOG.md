@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.0](https://github.com/lorenzlars/n8n-nodes-picnic/compare/n8n-nodes-picnic-v0.3.0...n8n-nodes-picnic-v0.4.0) (2026-04-30)
+
+
+### Features
+
+* upgrade picnic-api to 4.3.0 and expose new operations ([b0f2f06](https://github.com/lorenzlars/n8n-nodes-picnic/commit/b0f2f069505462601b682bd2993ead7b14bcc42a))
+
 ## [0.3.0](https://github.com/lorenzlars/n8n-nodes-picnic/compare/n8n-nodes-picnic-v0.2.6...n8n-nodes-picnic-v0.3.0) (2026-03-04)
 
 
