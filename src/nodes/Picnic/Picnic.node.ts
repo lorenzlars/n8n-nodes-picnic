@@ -12,13 +12,30 @@ import { ensurePicnicAuthenticated } from './login';
 type PicnicClient = {
   authKey?: string | null;
   auth: { login(username: string, password: string): Promise<unknown> };
-  catalog: { search(query: string): Promise<unknown> };
+  catalog: {
+    search(query: string): Promise<unknown>;
+    getProductDetails(productId: string): Promise<unknown>;
+  };
   cart: {
     getCart(): Promise<unknown>;
     addProductToCart(productId: string, count: number): Promise<unknown>;
+    addProductsToCart(products: Array<{ productId: string; count: number }>): Promise<unknown>;
+    removeProductFromCart(productId: string, count?: number): Promise<unknown>;
     clearCart(): Promise<unknown>;
+    getDeliverySlots(): Promise<unknown>;
+    setDeliverySlot(slotId: string): Promise<unknown>;
+    confirmOrder(orderId: string): Promise<unknown>;
   };
-  delivery: { getDeliveries(): Promise<unknown> };
+  delivery: {
+    getDeliveries(): Promise<unknown>;
+    getDelivery(deliveryId: string): Promise<unknown>;
+    cancelDelivery(deliveryId: string): Promise<unknown>;
+    setDeliveryRating(deliveryId: string, rating: number): Promise<unknown>;
+  };
+  payment: {
+    getPaymentProfile(): Promise<unknown>;
+    getWalletTransactions(): Promise<unknown>;
+  };
   user: { getUserDetails(): Promise<unknown> };
 };
 
@@ -53,6 +70,11 @@ async function executeOperation(
     return (await client.catalog.search(query)) as IDataObject;
   }
 
+  if (operation === 'getProductDetails') {
+    const productId = getNodeParameter('productId') as string;
+    return (await client.catalog.getProductDetails(productId)) as IDataObject;
+  }
+
   if (operation === 'getCart') {
     return (await client.cart.getCart()) as IDataObject;
   }
@@ -63,12 +85,56 @@ async function executeOperation(
     return (await client.cart.addProductToCart(productId, count)) as IDataObject;
   }
 
+  if (operation === 'removeFromCart') {
+    const productId = getNodeParameter('productId') as string;
+    const count = getNodeParameter('count') as number;
+    return (await client.cart.removeProductFromCart(productId, count)) as IDataObject;
+  }
+
   if (operation === 'clearCart') {
     return (await client.cart.clearCart()) as IDataObject;
   }
 
+  if (operation === 'getDeliverySlots') {
+    return (await client.cart.getDeliverySlots()) as IDataObject;
+  }
+
+  if (operation === 'setDeliverySlot') {
+    const slotId = getNodeParameter('slotId') as string;
+    return (await client.cart.setDeliverySlot(slotId)) as IDataObject;
+  }
+
+  if (operation === 'confirmOrder') {
+    const orderId = getNodeParameter('orderId') as string;
+    return (await client.cart.confirmOrder(orderId)) as IDataObject;
+  }
+
   if (operation === 'getDeliveries') {
     return (await client.delivery.getDeliveries()) as IDataObject;
+  }
+
+  if (operation === 'getDelivery') {
+    const deliveryId = getNodeParameter('deliveryId') as string;
+    return (await client.delivery.getDelivery(deliveryId)) as IDataObject;
+  }
+
+  if (operation === 'cancelDelivery') {
+    const deliveryId = getNodeParameter('deliveryId') as string;
+    return (await client.delivery.cancelDelivery(deliveryId)) as IDataObject;
+  }
+
+  if (operation === 'setDeliveryRating') {
+    const deliveryId = getNodeParameter('deliveryId') as string;
+    const rating = getNodeParameter('rating') as number;
+    return (await client.delivery.setDeliveryRating(deliveryId, rating)) as IDataObject;
+  }
+
+  if (operation === 'getPaymentProfile') {
+    return (await client.payment.getPaymentProfile()) as IDataObject;
+  }
+
+  if (operation === 'getWalletTransactions') {
+    return (await client.payment.getWalletTransactions()) as IDataObject;
   }
 
   if (operation === 'getUserDetails') {
@@ -107,10 +173,20 @@ export class Picnic implements INodeType {
         noDataExpression: true,
         options: [
           { name: 'Search Products', value: 'searchProducts', action: 'Search products' },
+          { name: 'Get Product Details', value: 'getProductDetails', action: 'Get product details' },
           { name: 'Get Cart', value: 'getCart', action: 'Get cart' },
           { name: 'Add Product To Cart', value: 'addToCart', action: 'Add product to cart' },
+          { name: 'Remove Product From Cart', value: 'removeFromCart', action: 'Remove product from cart' },
           { name: 'Clear Cart', value: 'clearCart', action: 'Clear cart' },
+          { name: 'Get Delivery Slots', value: 'getDeliverySlots', action: 'Get delivery slots' },
+          { name: 'Set Delivery Slot', value: 'setDeliverySlot', action: 'Set delivery slot' },
+          { name: 'Confirm Order', value: 'confirmOrder', action: 'Confirm order' },
           { name: 'Get Deliveries', value: 'getDeliveries', action: 'Get deliveries' },
+          { name: 'Get Delivery', value: 'getDelivery', action: 'Get delivery' },
+          { name: 'Cancel Delivery', value: 'cancelDelivery', action: 'Cancel delivery' },
+          { name: 'Set Delivery Rating', value: 'setDeliveryRating', action: 'Set delivery rating' },
+          { name: 'Get Payment Profile', value: 'getPaymentProfile', action: 'Get payment profile' },
+          { name: 'Get Wallet Transactions', value: 'getWalletTransactions', action: 'Get wallet transactions' },
           { name: 'Get User Details', value: 'getUserDetails', action: 'Get user details' },
         ],
         default: 'searchProducts',
@@ -135,7 +211,7 @@ export class Picnic implements INodeType {
         default: '',
         displayOptions: {
           show: {
-            operation: ['addToCart'],
+            operation: ['addToCart', 'removeFromCart', 'getProductDetails'],
           },
         },
       },
@@ -149,7 +225,59 @@ export class Picnic implements INodeType {
         },
         displayOptions: {
           show: {
-            operation: ['addToCart'],
+            operation: ['addToCart', 'removeFromCart'],
+          },
+        },
+      },
+      {
+        displayName: 'Delivery ID',
+        name: 'deliveryId',
+        type: 'string',
+        required: true,
+        default: '',
+        displayOptions: {
+          show: {
+            operation: ['getDelivery', 'cancelDelivery', 'setDeliveryRating'],
+          },
+        },
+      },
+      {
+        displayName: 'Rating',
+        name: 'rating',
+        type: 'number',
+        required: true,
+        default: 5,
+        typeOptions: {
+          minValue: 1,
+          maxValue: 10,
+        },
+        displayOptions: {
+          show: {
+            operation: ['setDeliveryRating'],
+          },
+        },
+      },
+      {
+        displayName: 'Slot ID',
+        name: 'slotId',
+        type: 'string',
+        required: true,
+        default: '',
+        displayOptions: {
+          show: {
+            operation: ['setDeliverySlot'],
+          },
+        },
+      },
+      {
+        displayName: 'Order ID',
+        name: 'orderId',
+        type: 'string',
+        required: true,
+        default: '',
+        displayOptions: {
+          show: {
+            operation: ['confirmOrder'],
           },
         },
       },
